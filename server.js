@@ -5,6 +5,28 @@ var mongoose = require("mongoose");
 var axios = require("axios");
 var cheerio = require("cheerio");
 
+axios.get("https://www.npr.org/").then(function(response) {
+
+  var $ = cheerio.load(response.data);
+
+  var results = [];
+
+  $("h4.headline-link").each(function(i, element) {
+
+    var title = $(element).text();
+
+    var link = $(element).parent().attr("href");
+
+    results.push({
+      title: title,
+      link: link
+    });
+  });
+  console.log(results);
+});
+
+
+
 var db = require("./models");
 
 var app = express();
