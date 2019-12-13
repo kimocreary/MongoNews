@@ -5,17 +5,26 @@ var mongoose = require("mongoose");
 var axios = require("axios");
 var cheerio = require("cheerio");
 
+var db = require("./models");
+
+var PORT = process.env.PORT ||3000;
+
+var app = express();
+
+
+
+
 axios.get("https://www.npr.org/").then(function(response) {
 
   var $ = cheerio.load(response.data);
 
   var results = [];
 
-  $("h4.headline-link").each(function(i, element) {
+  $("div.story-text").each(function(i, element) {
 
-    var title = $(element).text();
+    var title = $(this).find("h3").text().trim()
 
-    var link = $(element).parent().attr("href");
+    var link = $(this).find("a").attr("href")
 
     results.push({
       title: title,
@@ -23,13 +32,13 @@ axios.get("https://www.npr.org/").then(function(response) {
     });
   });
   console.log(results);
+
+  // insert all of the records in the database
 });
 
 
 
-var db = require("./models");
 
-var app = express();
 
 app.use(logger("dev"));
 
@@ -37,18 +46,53 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use(express.static("public"));
+var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines";
+mongoose.connect(MONGODB_URI);
 
-mongoose.connect("mongodb://localhost/unit18Populater", { useNewUrlParser: true });
+app.get("/",function(req, res) {
 
+  axios.get("https://www.npr.org/").then(function(response) {
 
+  var $ = cheerio.load(response.data);
 
+  var results = [];
 
+  $("div.story-text").each(function(i, element) {
 
+    var results = ""
+    var title = $(this).find("h3").text().trim()
 
+    var link = $(this).find("a").attr("href")
 
-
-
-
-app.listen(PORT, function() {
-    console.log("App running on port " + PORT + "!");
+    results = {
+      title: title,
+      link: link
+    };
+    db.Articles.create(results)
   });
+  console.log(results);
+
+  res.redirect("/allArticles")
+  // insert all of the records in the database
+});
+});
+app.get("/allArticles", function(req, res){
+
+db.Articles.find({}).then(function(records){
+  res.send(records)
+})
+  
+})
+
+app.listen(PORT,function(){
+  console.log("app is listening on PORT", PORT)
+})
+
+
+
+
+
+
+
+
+
