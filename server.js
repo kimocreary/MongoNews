@@ -23,29 +23,6 @@ var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines
 mongoose.connect(MONGODB_URI, {useUnifiedTopology: true, useNewUrlParser: true});
 
 
-// axios.get("https://www.npr.org/").then(function(response) {
-
-//   var $ = cheerio.load(response.data);
-
-//   var results = [];
-
-//   $("div.story-text").each(function(i, element) {
-
-//     var title = $(this).find("h3").text().trim()
-
-//     var link = $(this).find("a").attr("href")
-
-//     results.push({
-//       title: title,
-//       link: link
-//     });
-//   });
-//   console.log(results);
-
-  
-// });
-
-
 
 
 app.get("/scrape",function(req, res) {
@@ -106,7 +83,15 @@ app.get("/articles/:id", function(req, res) {
   });
 });
 
-
+app.post("/articles/:id", function(req, res) {
+  db.Notes.create(req.body)
+  .then(dbNote => {
+    return db.Article.findOneAndUpdate({ _id: req.params.id}, { note: dbNote._id}, {new: true})
+    .then(dbArticle => {
+      res.json(dbArticle)
+    }).catch(err => res.json(err))
+  })
+});
 
 
 
